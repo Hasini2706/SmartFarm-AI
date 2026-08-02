@@ -1,0 +1,25 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Python / Pytest
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Uploads / Audio static output (preserve dir structure with .gitkeep)
+static/uploads/*
+!static/uploads/.gitkeep
+static/reports/*
+!static/reports/.gitkeep

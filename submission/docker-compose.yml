@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - backend_static:/app/static
+      - backend_data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/smartfarm.db
+      - SECRET_KEY=prod_secret_key_987654321_smartfarm_ai
+      - ACCESS_TOKEN_EXPIRE_MINUTES=10080
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: always
+
+volumes:
+  backend_static:
+  backend_data:

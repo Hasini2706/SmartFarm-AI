@@ -1,0 +1,62 @@
+services:
+  # ----------------------------------------------------
+  # 1. FastAPI Python Backend Service
+  # ----------------------------------------------------
+  - type: web
+    name: smartfarm-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_CORS_ORIGINS
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_CALLBACK_URL
+        sync: false
+      - key: OPENWEATHERMAP_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+
+  # ----------------------------------------------------
+  # 2. React Vite Frontend Static Service
+  # ----------------------------------------------------
+  - type: web
+    name: smartfarm-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+    headers:
+      - path: /*
+        headers:
+          - key: X-Frame-Options
+            value: DENY
+          - key: X-Content-Type-Options
+            value: nosniff
+          - key: Content-Security-Policy
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://images.unsplash.com; connect-src 'self' ws: wss: https://*.onrender.com https://api.openweathermap.org https://generativelanguage.googleapis.com;"
+    routes:
+      # Single Page App routing rule: redirect all non-file routes to index.html
+      - type: rewrite
+        source: /*
+        destination: /index.html
