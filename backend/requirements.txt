@@ -15,6 +15,9 @@ python-jose[cryptography]
 bcrypt
 requests
 pytest
+pytest-asyncio
+httpx
+anyio
 jinja2
 fpdf2
 email-validator
