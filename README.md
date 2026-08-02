@@ -14,10 +14,9 @@
 
 ## 🌐 Live Production Deployments
 
-- **Live Frontend Web App**: [https://smartfarm-ai.vercel.app](https://smartfarm-ai.vercel.app)
-- **Live Backend API**: [https://smartfarm-backend.onrender.com](https://smartfarm-backend.onrender.com)
-- **Interactive Swagger Documentation**: [https://smartfarm-backend.onrender.com/docs](https://smartfarm-backend.onrender.com/docs)
-- **API Health Check Endpoint**: [https://smartfarm-backend.onrender.com/health](https://smartfarm-backend.onrender.com/health)
+- **Live Frontend Web App**: [https://smartfarm-ai.vercel.app](https://smart-farm-ai-azure.vercel.app)
+- **Live Backend API**: [https://smartfarm-backend.onrender.com](https://smartfarm-ai-1-kikf.onrender.com)
+
 
 ---
 
