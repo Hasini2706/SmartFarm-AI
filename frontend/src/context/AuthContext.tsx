@@ -185,12 +185,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       const response = await axios.get('/auth/google/login');
-      if (response.data?.url) {
-        window.location.href = response.data.url;
+      const targetUrl = response.data?.url || (typeof response.data === 'string' && response.data.startsWith('http') ? response.data : null);
+      if (targetUrl) {
+        window.location.href = targetUrl;
+      } else {
+        const baseUrl = getApiBaseUrl();
+        window.location.href = `${baseUrl}/auth/google/login`;
       }
     } catch (error) {
-      setIsLoading(false);
-      throw error;
+      console.warn("AJAX Google redirect notice, falling back to direct location:", error);
+      const baseUrl = getApiBaseUrl();
+      window.location.href = `${baseUrl}/auth/google/login`;
     }
   };
 

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # Google OAuth settings
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "your-google-client-id.apps.googleusercontent.com")
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "your-google-client-secret")
-    GOOGLE_CALLBACK_URL: str = os.getenv("GOOGLE_CALLBACK_URL", "http://localhost:5173/api/auth/google/callback")
+    GOOGLE_CALLBACK_URL: str = os.getenv("GOOGLE_CALLBACK_URL", "http://localhost:8000/api/v1/auth/google/callback")
     
     # Database connection URL (defaults to SQLite, upgrades dynamically to Postgres in production)
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./smartfarm.db")
@@ -63,7 +63,7 @@ class Settings(BaseSettings):
             
             cb_url = data.get("GOOGLE_CALLBACK_URL") or os.getenv("GOOGLE_CALLBACK_URL")
             if not cb_url:
-                data["GOOGLE_CALLBACK_URL"] = f"{data['FRONTEND_URL']}/api/auth/google/callback"
+                data["GOOGLE_CALLBACK_URL"] = "http://localhost:8000/api/v1/auth/google/callback"
             else:
                 data["GOOGLE_CALLBACK_URL"] = cb_url
 

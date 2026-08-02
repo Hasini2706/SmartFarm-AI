@@ -253,18 +253,28 @@ def google_login(payload: schemas.GoogleLoginRequest, request: Request, db: Sess
     }
 
 @router.get("/google/login")
-def google_redirect_login():
+def google_redirect_login(request: Request):
     import urllib.parse
+    from fastapi.responses import RedirectResponse
+    
+    cb_url = os.getenv("GOOGLE_CALLBACK_URL", getattr(auth.settings, "GOOGLE_CALLBACK_URL", "http://localhost:8000/api/v1/auth/google/callback"))
+    client_id = os.getenv("GOOGLE_CLIENT_ID", getattr(auth.settings, "GOOGLE_CLIENT_ID", ""))
+    
     params = {
-        "client_id": auth.settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": auth.settings.GOOGLE_CALLBACK_URL,
+        "client_id": client_id,
+        "redirect_uri": cb_url,
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "offline",
         "prompt": "select_account"
     }
     query = urllib.parse.urlencode(params)
-    return {"url": f"https://accounts.google.com/o/oauth2/v2/auth?{query}"}
+    google_url = f"https://accounts.google.com/o/oauth2/v2/auth?{query}"
+    
+    accept = request.headers.get("accept", "")
+    if "application/json" in accept and "text/html" not in accept:
+        return {"url": google_url}
+    return RedirectResponse(url=google_url)
 
 @router.get("/google/callback")
 def google_callback(code: str, request: Request, db: Session = Depends(get_db)):
@@ -275,11 +285,15 @@ def google_callback(code: str, request: Request, db: Session = Depends(get_db)):
     
     print(f"[Google OAuth Callback] Processing authorization code (len={len(code)})...")
     
+    cb_url = os.getenv("GOOGLE_CALLBACK_URL", getattr(auth.settings, "GOOGLE_CALLBACK_URL", "http://localhost:8000/api/v1/auth/google/callback"))
+    client_id = os.getenv("GOOGLE_CLIENT_ID", getattr(auth.settings, "GOOGLE_CLIENT_ID", ""))
+    client_secret = os.getenv("GOOGLE_CLIENT_SECRET", getattr(auth.settings, "GOOGLE_CLIENT_SECRET", ""))
+    
     payload = {
         "code": code,
-        "client_id": auth.settings.GOOGLE_CLIENT_ID,
-        "client_secret": auth.settings.GOOGLE_CLIENT_SECRET,
-        "redirect_uri": auth.settings.GOOGLE_CALLBACK_URL,
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "redirect_uri": cb_url,
         "grant_type": "authorization_code"
     }
     
