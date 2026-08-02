@@ -1,9 +1,9 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/api/v1/:path*", "destination": "https://smartfarm-backend.onrender.com/api/v1/:path*" },
-    { "source": "/api/:path*", "destination": "https://smartfarm-backend.onrender.com/api/:path*" },
-    { "source": "/static/:path*", "destination": "https://smartfarm-backend.onrender.com/static/:path*" },
+    { "source": "/api/v1/:path*", "destination": "https://smartfarm-ai-1-kikf.onrender.com/api/v1/:path*" },
+    { "source": "/api/:path*", "destination": "https://smartfarm-ai-1-kikf.onrender.com/api/:path*" },
+    { "source": "/static/:path*", "destination": "https://smartfarm-ai-1-kikf.onrender.com/static/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

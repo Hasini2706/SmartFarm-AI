@@ -269,7 +269,7 @@ def google_redirect_login():
 @router.get("/google/callback")
 def google_callback(code: str, request: Request, db: Session = Depends(get_db)):
     import requests
-    from fastapi.responses import HTMLResponse
+    from fastapi.responses import HTMLResponse, RedirectResponse
     import urllib.parse
     import json
     
@@ -391,32 +391,18 @@ def google_callback(code: str, request: Request, db: Session = Depends(get_db)):
             "is_active": user.is_active
         }
         user_json = json.dumps(user_data)
-        base_frontend = auth.settings.FRONTEND_URL.rstrip("/")
-        frontend_redirect_url = f"{base_frontend}/?token={access_token}&refresh_token={refresh_token}&user={urllib.parse.quote(user_json)}"
+        frontend_url = os.getenv("FRONTEND_URL", getattr(auth.settings, "FRONTEND_URL", "http://localhost:5173")).rstrip("/")
+        frontend_redirect_url = f"{frontend_url}/?token={access_token}&refresh_token={refresh_token}&user={urllib.parse.quote(user_json)}"
 
         print(f"[Google OAuth Callback] OAuth Success! Redirecting to frontend: {frontend_redirect_url}")
 
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Authentication Successful</title>
-            <meta http-equiv="refresh" content="0;url={frontend_redirect_url}">
-        </head>
-        <body>
-            <script>
-                window.location.href = "{frontend_redirect_url}";
-            </script>
-        </body>
-        </html>
-        """
-        return HTMLResponse(content=html_content)
+        return RedirectResponse(url=frontend_redirect_url)
 
     except Exception as e:
         print(f"[Google OAuth Callback] Authentication Exception: {e}")
         error_detail = str(e).replace("'", "\\'")
-        base_frontend = auth.settings.FRONTEND_URL.rstrip("/")
-        login_url = f"{base_frontend}/login"
+        frontend_url = os.getenv("FRONTEND_URL", getattr(auth.settings, "FRONTEND_URL", "http://localhost:5173")).rstrip("/")
+        login_url = f"{frontend_url}/login"
         html_content = f"""
         <!DOCTYPE html>
         <html>
