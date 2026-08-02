@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -29,9 +29,8 @@ jobs:
       #     python scripts/train_models.py
 
       - name: Run Pytest
-        working-directory: ./backend
         run: |
-          pytest
+          pytest tests -v
 
   frontend-build:
     runs-on: ubuntu-latest
