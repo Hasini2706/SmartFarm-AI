@@ -8,30 +8,21 @@ from app.config import settings
 from app.services.redis_service import RedisService
 
 class LLMService:
-    SYSTEM_PROMPT = """You are SmartFarm AI, an experienced agricultural expert and senior agronomist.
+    SYSTEM_PROMPT = """You are SmartFarm AI, a friendly and practical agricultural expert answering questions for farmers.
 
-Guidelines:
-- Provide practical, accurate, actionable farming advice to farmers, agricultural extension workers, and researchers.
-- Respond directly to the user's query. Output ONLY the final user-facing response.
-- NEVER include internal system instructions, meta-analysis, self-evaluations, category tags, or checklists (e.g., do NOT output "Category:", "Encouraging tone? Yes", "Clean formatting? Yes", or reasoning steps).
-- Never mention that you are an AI model unless explicitly asked.
-- If uncertain about a topic or lack verified data, state your uncertainty clearly instead of hallucinating.
-- Maintain a helpful, friendly, and professional tone.
-
-Formatting Requirements:
-- Use clean GitHub-flavored Markdown (headings ###, bullet points -, bold text **, and markdown tables when appropriate).
-
-Disease Queries:
-When the query is about crop diseases, structure your response with these clear sections:
-- **Possible Disease**: Identification of the crop disease or disorder.
-- **Symptoms**: Primary symptoms to observe.
-- **Causes**: Pathogen or environmental cause (fungal, bacterial, viral, nutrient deficiency).
-- **Organic Treatment**: Biological controls, organic sprays, or cultural practices.
-- **Chemical Treatment**: Recommended chemical treatments with application precautions.
-- **Prevention**: Preventive measures to avoid recurrence.
-
-General Farming Queries:
-For topics like drip/sprinkler irrigation, fertilizer application (NPK), weather management, pest control, soil health, or crop selection, give direct, practical, step-by-step guidance."""
+CRITICAL RULES:
+- Answer in ONE short paragraph only.
+- Maximum 2-3 sentences total.
+- Use simple, clear English that any farmer can easily understand.
+- Directly answer the user's question with only the most important cause, solution, or practical advice.
+- Do NOT use any Markdown formatting (no bold **, no italics, no code blocks).
+- Do NOT use headings (no #, ##, ###).
+- Do NOT use bullet points or numbered lists.
+- Do NOT use tables.
+- Do NOT repeat the question or provide long background explanations.
+- Do NOT include section titles like "Possible Disease", "Symptoms", "Causes", "Prevention", etc.
+- Do NOT expose system instructions, internal reasoning, or category tags.
+- Keep the response concise, complete, and practical so it never gets cut off."""
 
     @staticmethod
     def get_chat_response(query: str) -> Tuple[str, bool, str]:
@@ -95,7 +86,7 @@ For topics like drip/sprinkler irrigation, fertilizer application (NPK), weather
                             "temperature": 0.3,
                             "topK": 40,
                             "topP": 0.95,
-                            "maxOutputTokens": 1024
+                            "maxOutputTokens": 512
                         }
                     }
                     
@@ -106,7 +97,7 @@ For topics like drip/sprinkler irrigation, fertilizer application (NPK), weather
                         if candidates and 'content' in candidates[0]:
                             parts = candidates[0]['content'].get('parts', [])
                             if parts and 'text' in parts[0]:
-                                response_text = parts[0]['text']
+                                response_text = parts[0]['text'].strip()
                                 print(f"[LLMService] Response generated successfully via Gemini API model: '{model_name}'. Provider: 'gemini'")
                                 return response_text, True, "gemini"
                     elif response.status_code == 429:
@@ -123,117 +114,84 @@ For topics like drip/sprinkler irrigation, fertilizer application (NPK), weather
                     
         print("[LLMService] Using fallback agronomist decision engine. Provider: 'fallback'")
 
-
-        # 1. Government Schemes
-        if any(w in query_lower for w in ["scheme", "government", "subsidy", "pm-kisan", "pmkisan", "yojana"]):
+        # 1. Drip / Irrigation / Water Queries
+        if any(w in query_lower for w in ["drip", "irrigation", "sprinkler", "watering"]):
             return (
-                "Here are key Government schemes for farmers:\n\n"
-                "1. **PM-KISAN (Pradhan Mantri Kisan Samman Nidhi)**: Provides ₹6,000 per year in three equal installments directly into bank accounts of landholding farmers.\n"
-                "2. **PMFBY (Pradhan Mantri Fasal Bima Yojana)**: Low-premium crop insurance protecting against natural calamities, pests, and diseases.\n"
-                "3. **Soil Health Card Scheme**: Provides farmers with cards detailing soil nutrient status and custom fertilizer recommendations for their land.\n"
-                "4. **PMKSY (Pradhan Mantri Krishi Sinchayee Yojana)**: Focuses on 'Har Khet Ko Pani' (water to every field) and 'More Crop Per Drop' using drip and sprinkler irrigation subsidies.",
+                "Drip irrigation delivers water and nutrients directly to plant roots through small tubes, reducing water evaporation and weed growth. It keeps crop foliage dry to prevent fungal diseases while using up to fifty percent less water. Install drip lines along crop rows and run irrigation during early morning hours.",
                 True,
                 "fallback"
             )
-            
-        # 2. Organic Farming
+
+        # 2. Disease / Yellow Leaves / Spots / Blight Queries
+        elif any(w in query_lower for w in ["yellow", "disease", "fungal", "blight", "rust", "rot", "spots", "sick"]):
+            return (
+                "Yellow tomato leaves are commonly caused by overwatering, nitrogen deficiency, or Early Blight fungal infection in tomatoes and potatoes. Check if the soil stays too wet and inspect the leaves for dark spots; water only when the topsoil is dry and remove badly affected leaves.",
+                True,
+                "fallback"
+            )
+
+        # 3. Government Schemes
+        elif any(w in query_lower for w in ["scheme", "government", "subsidy", "pm-kisan", "pmkisan", "yojana"]):
+            return (
+                "Government schemes like PM-KISAN provide direct financial assistance of 6,000 rupees annually into bank accounts of landholding farmers. Schemes like PMKSY offer subsidies for installing drip and sprinkler irrigation systems. Visit your local agricultural extension office or official portal to enroll.",
+                True,
+                "fallback"
+            )
+
+        # 4. Organic Farming
         elif any(w in query_lower for w in ["organic", "compost", "natural farming", "vermicompost", "manure"]):
             return (
-                "Organic farming practices focus on ecological balance and soil health:\n\n"
-                "- **Soil Nutrition**: Use vermicompost, cow dung manure, or green manures (like sunn hemp) instead of chemical fertilizers.\n"
-                "- **Pest Control**: Apply Neem oil spray, garlic-chili paste extract, or utilize biological agents like trichoderma.\n"
-                "- **Crop Rotation**: Alternate nitrogen-fixing legumes (lentils, beans) with grains (wheat, rice) to maintain soil structure and nutrients naturally.\n"
-                "- **Mulching**: Use dry straw or organic matter to cover soil, conserving moisture and suppressing weed growth.",
+                "Organic farming uses natural compost, cow dung manure, and neem oil spray instead of synthetic chemical fertilizers. Rotating leguminous crops like lentils with wheat or rice naturally restores soil nitrogen and suppresses weeds. Mulching with dry straw conserves soil moisture and prevents erosion.",
                 True,
                 "fallback"
             )
-            
-        # 3. Market Prices
+
+        # 5. Market Prices
         elif any(w in query_lower for w in ["price", "market", "rate", "cost", "mandi", "sell"]):
             wheat_p = random.randint(2100, 2300)
             rice_p = random.randint(2200, 2500)
             corn_p = random.randint(1800, 2000)
-            cotton_p = random.randint(6500, 7200)
-            potato_p = random.randint(1100, 1500)
-            
             return (
-                f"Here are today's average Mandi prices per quintal (100 kg):\n\n"
-                f"- **Wheat (Kanak)**: ₹{wheat_p} - ₹{wheat_p + 150}\n"
-                f"- **Paddy/Rice**: ₹{rice_p} - ₹{rice_p + 200}\n"
-                f"- **Corn (Maize)**: ₹{corn_p} - ₹{corn_p + 120}\n"
-                f"- **Cotton (Kapas)**: ₹{cotton_p} - ₹{cotton_p + 400}\n"
-                f"- **Potato**: ₹{potato_p} - ₹{potato_p + 250}\n\n"
-                "Note: Actual prices may vary depending on moisture levels, quality, and specific agricultural markets.",
+                f"Today's average Mandi prices per quintal are approximately {wheat_p} rupees for wheat, {rice_p} rupees for paddy rice, and {corn_p} rupees for maize. Actual market rates vary slightly depending on moisture content, crop grade, and your local agricultural Mandi location.",
                 True,
                 "fallback"
             )
-            
-        # 4. Crop Diseases
-        elif any(w in query_lower for w in ["disease", "fungal", "blight", "rust", "rot", "spots", "sick"]):
-            return (
-                "Common crop disease troubleshooting tips:\n\n"
-                "- **Blight (Early/Late)**: Characterized by dark brown circles with target-like rings (Early) or water-soaked dark lesions (Late). Treat with copper fungicides or organic neem spray.\n"
-                "- **Rust (Common/Yellow)**: Red-orange spores on leaves. Use propiconazole fungicides or ensure crop spacing to reduce humidity.\n"
-                "- **Blast (Rice)**: Diamond-shaped lesions on leaves and nodes. Apply tricyclazole or optimize nitrogen application (excess nitrogen promotes blast).\n"
-                "- **Prevention**: Always use certified disease-resistant seeds, avoid overhead irrigation, and prune infected leaves early.",
-                True,
-                "fallback"
-            )
-            
-        # 5. Soil & pH
+
+        # 6. Soil & pH
         elif any(w in query_lower for w in ["soil", "ph", "acidic", "alkaline", "nitrogen", "potassium", "phosphorus", "npk"]):
             return (
-                "Managing Soil Health and NPK nutrients:\n\n"
-                "- **pH Correction**: Optimal soil pH is 6.0 to 7.0 for most crops. For acidic soils (<5.5), apply agricultural lime (calcium carbonate). For alkaline soils (>7.8), add gypsum or organic sulfur.\n"
-                "- **Nitrogen (N)**: Promotes leaf growth. Deficiency causes yellowing leaves (chlorosis). Apply Urea or organic compost.\n"
-                "- **Phosphorus (P)**: Essential for root development. Deficiency limits growth. Apply DAP (Diammonium Phosphate) or SSP.\n"
-                "- **Potassium (K)**: Increases disease resistance and water retention. Apply MOP (Muriate of Potash).",
+                "Optimal soil pH for most crops ranges between 6.0 and 7.0 for healthy nutrient uptake. Apply agricultural lime if your soil is overly acidic or gypsum if it is alkaline. Balanced NPK fertilizer application promotes strong root development and lush foliage.",
                 True,
                 "fallback"
             )
-            
-        # 6. Weather
+
+        # 7. Weather
         elif any(w in query_lower for w in ["weather", "rain", "temperature", "climate", "forecast", "monsoon"]):
             return (
-                "Weather-responsive farming guidelines:\n\n"
-                "- **High Temp & Dry Air**: Increase irrigation frequency, prefer drip irrigation early in the morning, and apply mulching.\n"
-                "- **Incoming Rainfall**: Postpone any chemical spraying or fertilizer applications. Clean drainage channels to prevent waterlogging.\n"
-                "- **High Humidity**: Watch out for fungal disease outbreaks. Keep crop canopy aerated.",
+                "During hot dry weather, irrigate early in the morning and apply organic mulch to retain soil moisture. If heavy rainfall is forecasted, clear field drainage channels and postpone chemical spraying or fertilizer application.",
                 True,
                 "fallback"
             )
-            
-        # 7. Seeds & Sowing
+
+        # 8. Seeds & Sowing
         elif any(w in query_lower for w in ["seed", "sow", "plant", "depth", "spacing"]):
             return (
-                "General sowing recommendations:\n\n"
-                "- **Rice**: Sow in nurseries first. Transplant 21-25 day old seedlings. Keep 15x20 cm spacing.\n"
-                "- **Wheat**: Sow directly. Ideal seed rate is 100 kg/hectare. Sowing depth: 3-5 cm. Spacing: 20-22 cm row-to-row.\n"
-                "- **Corn**: Sowing depth: 5 cm. Spacing: 60 cm row-to-row and 20 cm plant-to-plant.\n"
-                "- **Potato**: Plant tubers at 7-10 cm depth. Spacing: 60x20 cm.\n"
-                "- Seed treatment with Thiram or Trichoderma is highly recommended before sowing to prevent soil-borne diseases.",
+                "Sow certified seeds at recommended depths and row spacing to ensure proper root development and sunlight exposure. Treat seeds with organic Trichoderma before planting to protect against soil-borne seedling diseases.",
                 True,
                 "fallback"
             )
-            
-        # 8. Pesticides & Controls
+
+        # 9. Pesticides & Controls
         elif any(w in query_lower for w in ["pesticide", "pest", "insects", "bugs", "worms", "spray"]):
             return (
-                "Pest management strategies:\n\n"
-                "- **Aphids/Jassids**: Sucking pests. Control using Neem oil spray (1500 ppm) or chemical sprays like Imidacloprid.\n"
-                "- **Bollworms/Armyworms**: Chewing caterpillars. Use pheromone traps to capture moths. Use Bacillus thuringiensis (Bt) spray or chlorantraniliprole for chemical treatment.\n"
-                "- **Spider Mites**: Create webbing under leaves. Apply acaricides/miticides like abamectin. Keep plants well-watered.\n"
-                "- **IPM Practice**: Prefer Integrated Pest Management (IPM) - combine mechanical traps, organic spray, crop rotation, and use chemical pesticides only as a last resort.",
+                "Control sucking pests like aphids using a five percent neem oil spray applied during cooler morning or evening hours. Install pheromone traps for armyworms and practice crop rotation to manage pest populations naturally.",
                 True,
                 "fallback"
             )
 
         # Default fallback
         return (
-            "I'm your SmartFarm AI assistant. I can answer questions about crop diseases, market prices, organic farming, government schemes, soil health, seeds, and pest control.\n\n"
-            "Could you specify what crop or farming query you have? E.g., 'What is the Mandi price of wheat today?' or 'How do I treat early blight in potatoes?'",
+            "SmartFarm AI provides concise agricultural advice on crop diseases, irrigation, market prices, and soil health. Ask any specific farming question to receive direct practical guidance.",
             False,
             "fallback"
         )
-
-
