@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { useToast } from '../context/ToastContext';
 import { GlassCard } from '../components/GlassCard';
 import { SkeletonLoader } from '../components/SkeletonLoader';
 import { EmptyState } from '../components/EmptyState';
+import { ToastContainer, ToastMessage } from '../components/Toast';
 import {
   CloudSun,
   Droplet,
@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 
 export const Weather: React.FC = () => {
-  const toast = useToast();
   const [lat, setLat] = useState<number>(28.61);
   const [lon, setLon] = useState<number>(77.20);
   const [crop, setCrop] = useState('Rice');
@@ -31,37 +30,77 @@ export const Weather: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [weatherData, setWeatherData] = useState<any | null>(null);
   const [error, setError] = useState('');
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const fetchWeather = useCallback(async () => {
+  // Deduplication refs to prevent double mounts & duplicate toast triggers
+  const lastFetchedKeyRef = useRef<string>('');
+  const isFetchingRef = useRef<boolean>(false);
+
+  const addToast = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    setToasts((prev) => [...prev, { id, type, title, message }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const fetchWeather = async (force: boolean = false) => {
+    const paramKey = `${lat}-${lon}-${crop}-${soilN}-${soilP}-${soilK}-${soilPh}`;
+
+    // Skip redundant fetch if params haven't changed and data exists
+    if (!force && lastFetchedKeyRef.current === paramKey && weatherData) {
+      return;
+    }
+
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     setLoading(true);
     setError('');
+
     try {
       const response = await axios.get(
         `/weather?lat=${lat}&lon=${lon}&crop=${crop}&soil_n=${soilN}&soil_p=${soilP}&soil_k=${soilK}&soil_ph=${soilPh}`
       );
       setWeatherData(response.data);
-      toast.success(`Weather synced for Lat: ${lat}, Lon: ${lon}`, 'Weather Telemetry Live');
+
+      // Trigger success notification at most ONCE per unique successful request
+      if (lastFetchedKeyRef.current !== paramKey || force) {
+        lastFetchedKeyRef.current = paramKey;
+        addToast(
+          'success',
+          'Weather Telemetry Live',
+          `Weather synced for Lat: ${lat}, Lon: ${lon}`
+        );
+      }
     } catch (err: any) {
-      const msg = 'Could not query weather reports. Validate server connectivity.';
-      setError(msg);
-      toast.error(msg, 'Weather Fetch Failure');
+      setError('Could not query weather reports. Validate server connectivity.');
+      addToast(
+        'error',
+        'Weather Sync Failed',
+        'Could not query weather reports. Validate server connectivity.'
+      );
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
-  }, [lat, lon, crop, soilN, soilP, soilK, soilPh, toast]);
+  };
 
   useEffect(() => {
-    fetchWeather();
-  }, [fetchWeather]);
+    fetchWeather(false);
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchWeather();
+    fetchWeather(true);
   };
-
 
   return (
     <div className="space-y-8 text-left max-w-6xl mx-auto">
+      {/* Toast Notification Container */}
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
+
       {/* Page header and controller form */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-1 shrink-0">

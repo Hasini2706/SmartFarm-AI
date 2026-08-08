@@ -36,3 +36,14 @@ Thumbs.db
 
 # Submissions & Zips
 *.zip
+
+# Runtime static uploads & reports
+*.mjs
+backend/static/reports/*.pdf
+backend/static/uploads/*.png
+backend/static/uploads/*.jpg
+backend/static/uploads/*.jpeg
+static/reports/*.pdf
+static/uploads/*.png
+static/uploads/*.jpg
+static/uploads/*.jpeg

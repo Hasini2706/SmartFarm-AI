@@ -61,13 +61,16 @@ def get_weather_and_advice(
                 # 3. Call API
                 weather_data = WeatherService.get_weather(lat, lon)
                 # Save DB Cache
-                db_cache = models.WeatherCache(
-                    lat=round(lat, 2),
-                    lon=round(lon, 2),
-                    data=weather_data
-                )
-                db.add(db_cache)
-                db.commit()
+                try:
+                    db_cache = models.WeatherCache(
+                        lat=round(lat, 2),
+                        lon=round(lon, 2),
+                        data=weather_data
+                    )
+                    db.add(db_cache)
+                    db.commit()
+                except Exception:
+                    db.rollback()
                 # Save Redis Cache
                 try:
                     RedisService.set(redis_key, json.dumps(weather_data), ex=7200)
