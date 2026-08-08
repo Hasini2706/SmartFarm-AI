@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useToast } from '../context/ToastContext';
 import { GlassCard } from '../components/GlassCard';
 import {
@@ -264,7 +266,41 @@ export const AIAssistant: React.FC = () => {
                     ? 'bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white rounded-tr-none' 
                     : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-tl-none border dark:border-slate-800'
                 }`}>
-                  <p className="whitespace-pre-line">{msg.message}</p>
+                  {isUser ? (
+                    <p className="whitespace-pre-line">{msg.message}</p>
+                  ) : (
+                    <div className="prose prose-xs dark:prose-invert max-w-none space-y-1">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                          h1: ({ children }) => <h1 className="text-sm font-bold my-2 text-emerald-600 dark:text-emerald-400 border-b pb-1 dark:border-slate-700">{children}</h1>,
+                          h2: ({ children }) => <h2 className="text-xs font-bold my-2 text-emerald-600 dark:text-emerald-400 border-b pb-1 dark:border-slate-700">{children}</h2>,
+                          h3: ({ children }) => <h3 className="text-xs font-bold my-1.5 text-emerald-600 dark:text-emerald-400">{children}</h3>,
+                          h4: ({ children }) => <h4 className="text-xs font-bold my-1 text-slate-800 dark:text-slate-100">{children}</h4>,
+                          ul: ({ children }) => <ul className="list-disc list-inside space-y-1 my-2 pl-2">{children}</ul>,
+                          ol: ({ children }) => <ol className="list-decimal list-inside space-y-1 my-2 pl-2">{children}</ol>,
+                          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                          strong: ({ children }) => <strong className="font-bold text-emerald-700 dark:text-emerald-300">{children}</strong>,
+                          b: ({ children }) => <b className="font-bold text-emerald-700 dark:text-emerald-300">{children}</b>,
+                          em: ({ children }) => <em className="italic">{children}</em>,
+                          a: ({ href, children }) => (
+                            <a href={href} target="_blank" rel="noopener noreferrer" className="text-emerald-500 underline hover:text-emerald-400 font-semibold">
+                              {children}
+                            </a>
+                          ),
+                          table: ({ children }) => <div className="overflow-x-auto my-3"><table className="w-full text-xs border-collapse border border-slate-300 dark:border-slate-700 rounded-lg overflow-hidden">{children}</table></div>,
+                          thead: ({ children }) => <thead className="bg-slate-100 dark:bg-slate-700/50">{children}</thead>,
+                          th: ({ children }) => <th className="border border-slate-300 dark:border-slate-700 px-3 py-1.5 font-bold text-left">{children}</th>,
+                          td: ({ children }) => <td className="border border-slate-300 dark:border-slate-700 px-3 py-1.5">{children}</td>,
+                          blockquote: ({ children }) => <blockquote className="border-l-4 border-emerald-500 pl-3 py-1 my-2 italic text-slate-600 dark:text-slate-400 bg-emerald-500/5 rounded-r-lg">{children}</blockquote>,
+                          code: ({ children }) => <code className="bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded text-[11px] font-mono text-emerald-600 dark:text-emerald-400 border dark:border-slate-700">{children}</code>
+                        }}
+                      >
+                        {msg.message}
+                      </ReactMarkdown>
+                    </div>
+                  )}
                 </div>
               </div>
             );
